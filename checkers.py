@@ -2,14 +2,16 @@ import base64
 
 from twisted.conch import error
 from twisted.conch.ssh import keys
-from twisted.cred import checkers, credentials
+from twisted.cred.checkers import ICredentialsChecker
+from twisted.cred.credentials import ISSHPrivateKey, IUsernamePassword
+from twisted.internet import defer
 from twisted.python import failure, log
 from zope.interface import implementer
 
 
-@implementer(checkers.ICredentialsChecker)
+@implementer(ICredentialsChecker)
 class PublicKeyCreditentialsChecker:
-    credentialInterfaces = (credentials.ISSHPrivateKey,)
+    credentialInterfaces = (ISSHPrivateKey,)
 
     def __init__(self, authorized_keys):
         self.authorizedKeys = authorized_keys
@@ -34,3 +36,12 @@ class PublicKeyCreditentialsChecker:
         else:
             log.err('Signature check failed!')
             return failure.Failure(error.ConchError('Incorrect signature'))
+
+
+@implementer(ICredentialsChecker)
+class AllowAnnomyousKeysChecker:
+    credentialInterfaces = ISSHPrivateKey
+
+    def requestAvatarId(self, credentials):
+        log.msg(credentials)
+        return defer.succeed(credentials.username)
