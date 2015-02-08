@@ -27,10 +27,11 @@ class ChatProtocol(HistoricRecvLine):
     def lineReceived(self, line):
         line = line.strip()
         if line:
-            log.msg(line)
+            log.msg('[{0}] {1}'.format(self.username, line))
             if line.startswith('/'):
-                cmd_and_args = line[1:].split()
-                cmd, args = cmd_and_args[0], cmd_and_args[1]
+                cmd_and_args = line[1:].split(' ')
+                cmd = cmd_and_args[0]
+                args = '' if len(cmd_and_args) < 2 else cmd_and_args[1:]
                 function = self.get_command_function(cmd)
 
                 try:
@@ -42,6 +43,7 @@ class ChatProtocol(HistoricRecvLine):
                 except Exception as e:
                     log.err('Failed to execute command {0} by {1}'.format(cmd, self.username))
                     self.terminal.write('Error: {0}'.format(e))
+                finally:
                     self.terminal.nextLine()
             else:
                 self.terminal.nextLine()
