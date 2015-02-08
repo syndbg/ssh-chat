@@ -5,8 +5,8 @@ from twisted.python import log
 
 class ChatProtocol(HistoricRecvLine):
 
-    def __init__(self, factory, user):
-        self.factory = factory
+    def __init__(self, user):
+        # self.factory = factory
         self.user = user
         self.username = self.user.username
 
@@ -28,21 +28,22 @@ class ChatProtocol(HistoricRecvLine):
         line = line.strip()
         if line:
             log.msg(line)
-            cmd_and_args = line.split()
-            cmd = cmd_and_args[0]
-            args = cmd_and_args[1:]
-            function = self.get_command_function(cmd)
-            if function:
+            if line.startswith('/'):
+                cmd_and_args = line[1:].split()
+                cmd, args = cmd_and_args[0], cmd_and_args[1]
+                function = self.get_command_function(cmd)
+
                 try:
                     function(*args)
-                    log.msg('{0} executed command {1}.'.format(self.username, function.func_name))
+                    log.msg('Command {0} executed by {1}.'.format(function.func_name, self.username))
+                except TypeError:
+                    log.err('Invalid number of arguments given for {0} by {1}'.format(cmd, self.username))
+                    self.terminal.write('Invalid numers of arguments given!')
                 except Exception as e:
-                    log.err('{0} failed to execute command {1}.'.format(self.username, function.func_name))
+                    log.err('Failed to execute command {0} by {1}'.format(cmd, self.username))
                     self.terminal.write('Error: {0}'.format(e))
                     self.terminal.nextLine()
             else:
-                log.err('{0} tried to execute a non-existing command.')
-                self.terminal.write('No such command.')
                 self.terminal.nextLine()
         self.show_prompt()
 

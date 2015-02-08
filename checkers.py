@@ -40,7 +40,7 @@ class PublicKeyCreditentialsChecker:
 
 @implementer(ICredentialsChecker)
 class AllowAnnomyousKeysChecker:
-    credentialInterfaces = ISSHPrivateKey
+    credentialInterfaces = (ISSHPrivateKey,)
 
     def requestAvatarId(self, credentials):
         log.msg(credentials)
