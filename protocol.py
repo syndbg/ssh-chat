@@ -9,12 +9,12 @@ from commands import CommandsHandler
 
 class ChatProtocol(HistoricRecvLine):
 
-    def __init__(self, user, factory=None, colors=None):
+    def __init__(self, user, color):
         self.user = user
         self.username = self.user.username
-        self.factory = factory
+        self.factory = None # will be injected quite ugly in Realm's openShell
         self.commands = CommandsHandler()
-        self.colors = colors
+        self.color = color
 
     def connectionMade(self):
         HistoricRecvLine.connectionMade(self)
@@ -66,9 +66,9 @@ class ChatProtocolFactory(SSHFactory):
         self.users = kwargs.get('users', {})
         self.colors = kwargs.get('colors', {})
 
-    def buildProtocol(self):
-        proto = SSHFactory.buildProtocol(None)
-        proto.factory = ChatProtocolFactory()
+    def buildProtocol(self, addr):
+        proto = SSHFactory.buildProtocol(self, addr)
+        proto.factory = self
 
         random_color = random.choice(self.colors.keys())
         proto.color = self.colors.get(random_color)

@@ -6,8 +6,10 @@ from twisted.cred.portal import IRealm
 from twisted.python import log
 from zope.interface import implementer
 
-from protocol import ChatProtocol
+from protocol import ChatProtocol, ChatProtocolFactory
 
+
+factory = ChatProtocolFactory()
 
 @implementer(ISession)
 class ChatAvatar(ConchUser):
@@ -18,9 +20,10 @@ class ChatAvatar(ConchUser):
         self.channelLookup.update({'session': session.SSHSession})
 
     def openShell(self, protocol):
-        server_protocol = insults.ServerProtocol(ChatProtocol, self)
+        server_protocol = insults.ServerProtocol(ChatProtocol, self, None)
         server_protocol.makeConnection(protocol)
         protocol.makeConnection(session.wrapProtocol(server_protocol))
+        server_protocol = factory
 
     def getPty(self, terminal, window_size, attrs):
         return None
