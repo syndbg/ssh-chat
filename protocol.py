@@ -2,13 +2,16 @@ from twisted.conch.recvline import HistoricRecvLine
 from twisted.conch.client.direct import SSHClientFactory
 from twisted.python import log
 
+from commands import CommandsHandler
+
 
 class ChatProtocol(HistoricRecvLine):
 
-    def __init__(self, user):
-        # self.factory = factory
+    def __init__(self, user, factory=None):
         self.user = user
         self.username = self.user.username
+        self.factory = factory
+        self.commands = CommandsHandler(self)
 
     def connectionMade(self):
         HistoricRecvLine.connectionMade(self)
@@ -22,7 +25,7 @@ class ChatProtocol(HistoricRecvLine):
         self.terminal.write('[{0}] '.format(self.username))
 
     def get_command_function(self, cmd):
-        return getattr(self, 'do_' + cmd, None)
+        return getattr(self.commands, 'do_' + cmd, None)
 
     def lineReceived(self, line):
         line = line.strip()
@@ -32,44 +35,24 @@ class ChatProtocol(HistoricRecvLine):
                 cmd_and_args = line[1:].split(' ')
                 cmd = cmd_and_args[0]
                 args = '' if len(cmd_and_args) < 2 else cmd_and_args[1:]
-                function = self.get_command_function(cmd)
-
-                try:
-                    function(*args)
-                    log.msg('Command {0} executed by {1}.'.format(function.func_name, self.username))
-                except TypeError:
-                    log.err('Invalid number of arguments given for {0} by {1}'.format(cmd, self.username))
-                    self.terminal.write('Invalid numers of arguments given!')
-                except Exception as e:
-                    log.err('Failed to execute command {0} by {1}'.format(cmd, self.username))
-                    self.terminal.write('Error: {0}'.format(e))
-                finally:
-                    self.terminal.nextLine()
+                self.try_execute_command(cmd, args)
             else:
                 self.terminal.nextLine()
         self.show_prompt()
 
-    def do_help(self):
-        public_methods = [function_name for function_name in dir(self) if function_name.startswith('do_')]
-        commands = [cmd.replace('do_', '', 1) for cmd in public_methods]
-        self.terminal.write('Commands: ' + ' '.join(commands))
-        self.terminal.nextLine()
-
-    def do_echo(self, *args):
-        self.terminal.write(' '.join(args))
-        self.terminal.nextLine()
-
-    def do_whoami(self):
-        self.terminal.write(self.user.username)
-        self.terminal.nextLine()
-
-    def do_quit(self):
-        self.terminal.write('Bye!')
-        self.terminal.nextLine()
-        self.terminal.loseConnection()
-
-    def do_clear(self):
-        self.terminal.reset()
+    def try_execute_command(self, cmd, args):
+        function = self.get_command_function(cmd)
+        try:
+            function(*args)
+            log.msg('Command {0} executed by {1}.'.format(function.func_name, self.username))
+        except TypeError:
+            log.err('Invalid number of arguments given for {0} by {1}'.format(cmd, self.username))
+            self.terminal.write('Invalid numers of arguments given!')
+        except Exception as e:
+            log.err('Failed to execute command {0} by {1}'.format(cmd, self.username))
+            self.terminal.write('Error: {0}'.format(e))
+        finally:
+            self.terminal.nextLine()
 
 
 class ChatProtocolFactory(SSHClientFactory):
