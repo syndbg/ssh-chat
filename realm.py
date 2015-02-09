@@ -34,6 +34,7 @@ class ChatAvatar(ConchUser):
 
 @implementer(IRealm)
 class ChatRealm:
+
     def requestAvatar(self, avatarId, mind, *interfaces):
         if IConchUser not in interfaces:
             raise NotImplementedError('No supported interfaces found.')

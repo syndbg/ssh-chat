@@ -1,5 +1,7 @@
+import random
+
 from twisted.conch.recvline import HistoricRecvLine
-from twisted.conch.client.direct import SSHClientFactory
+from twisted.conch.ssh.factory import SSHFactory
 from twisted.python import log
 
 from commands import CommandsHandler
@@ -7,18 +9,19 @@ from commands import CommandsHandler
 
 class ChatProtocol(HistoricRecvLine):
 
-    def __init__(self, user, factory=None):
+    def __init__(self, user, factory=None, colors=None):
         self.user = user
         self.username = self.user.username
         self.factory = factory
-        self.commands = CommandsHandler(self)
+        self.commands = CommandsHandler()
+        self.colors = colors
 
     def connectionMade(self):
         HistoricRecvLine.connectionMade(self)
         log.msg('{0} logged in'.format(self.username))
         self.terminal.write('Welcome! {0}'.format(self.username))
         self.terminal.nextLine()
-        self.do_help()
+        self.commands.do_help()
         self.show_prompt()
 
     def show_prompt(self):
@@ -55,10 +58,18 @@ class ChatProtocol(HistoricRecvLine):
             self.terminal.nextLine()
 
 
-class ChatProtocolFactory(SSHClientFactory):
+class ChatProtocolFactory(SSHFactory):
 
-    def __init__(self):
-        self.users = {}
+    protocol = ChatProtocol
+
+    def __init__(self, **kwargs):
+        self.users = kwargs.get('users', {})
+        self.colors = kwargs.get('colors', {})
 
     def buildProtocol(self):
-        return ChatProtocol(self)
+        proto = SSHFactory.buildProtocol(None)
+        proto.factory = ChatProtocolFactory()
+
+        random_color = random.choice(self.colors.keys())
+        proto.color = self.colors.get(random_color)
+        return proto

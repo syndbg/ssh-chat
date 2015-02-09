@@ -1,10 +1,10 @@
 import sys
 
 from twisted.internet import reactor
-from twisted.cred import portal, checkers
-from twisted.conch.ssh import factory
+from twisted.cred import portal
 from twisted.python import log
 
+from protocol import ChatProtocolFactory
 from checkers import PublicKeyCreditentialsChecker, AllowAnnomyousKeysChecker
 from realm import ChatRealm
 from helpers import get_RSA_keys
@@ -12,7 +12,7 @@ from helpers import get_RSA_keys
 
 if __name__ == '__main__':
     log.startLogging(sys.stdout)
-    factory = factory.SSHFactory()
+    factory = ChatProtocolFactory()
     realm = ChatRealm()
     factory.portal = portal.Portal(realm)
 
