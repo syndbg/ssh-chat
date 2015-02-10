@@ -3,9 +3,9 @@ import threading
 import paramiko
 
 
-class Server(paramiko.ServerInterface):
+class ChatServer(paramiko.ServerInterface):
 
-    def __init__(self, ):
+    def __init__(self):
         self.event = threading.Event()
 
     def check_channel_request(self, kind, chanid):
@@ -17,11 +17,11 @@ class Server(paramiko.ServerInterface):
         return 'publickey'
 
     def check_auth_password(self, username, password):
-        return paramiko.AUTH_SUCCESSFUL
-
+        return paramiko.OPEN_FAILED_ADMINISTRATIVELY_PROHIBITED
 
     def check_auth_publickey(self, username, key):
-        return True
+        return paramiko.AUTH_SUCCESSFUL
 
     def check_channel_shell_request(self, channel):
+        self.event.set()
         return True
